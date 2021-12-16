@@ -1,0 +1,35 @@
+######## Criado por Gabriel Klug, baseado no código do Caio Delgado [https://github.com/caiodelgadonew/blog-vagrant-101] ########
+
+# Este Vagrant file é destinado a criar um laboratório de docker com 3 máquinas virtuais: server01 (ubuntu 20.04), server02(ubuntu 20.04), server03(centos 7).
+# As configurações das máquinas estão declaradas na lista "machines". 
+# Código feito para utilizar com o provider Virtualbox. 
+# Cada um dos servers possuirá uma rede privada para comunicação com prefixo de rede 172.16.15.XXX.
+# Elas serão agrupadas num grupo chamado "LabDocker01" dentro do VirtualBox. 
+# Após subir a VM o vagrant irá utilizar o script "instala_docker.sh" para instalar o docker via script de conveniencia
+# Para subir o lab, apenas execute um vagrant up.
+
+machines = {
+  "server01" => {"memory"=>"2048", "cpu"=>"2", "ip"=>"200", "image"=>"ubuntu/focal64"},
+  "server02" => {"memory"=>"2048", "cpu"=>"2", "ip"=>"201", "image"=>"ubuntu/focal64"},
+  "server03" => {"memory"=>"2048", "cpu"=>"2", "ip"=>"202", "image"=>"centos/7"}
+} 
+
+Vagrant.configure("2") do |config|
+  machines.each do |name, conf|
+    config.vm.define "#{name}" do |machine|
+      machine.vm.box = "#{conf["image"]}"
+      machine.vm.hostname = "#{name}"
+      # a linha abaixo foi adicionada pois algumas vezes as máquinas demoram a iniciar e o vagrant não finaliza o deploy. Caso aconteça ainda assim, aumentar um pouco mais o tempo.
+      # o padrão são 300 segundos.
+      machine.vm.boot_timeout=500
+      machine.vm.network "private_network", ip: "172.16.15.#{conf["ip"]}"
+      machine.vm.provider "virtualbox" do |vb|
+        vb.name = "#{name}"
+        vb.memory = conf["memory"]
+        vb.cpus = conf["cpu"]
+        vb.customize ["modifyvm", :id,"--groups", "/LabDocker01"]
+      end
+    machine.vm.provision "shell", path: "instala_docker.sh"
+    end
+  end
+end

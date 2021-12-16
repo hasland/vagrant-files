@@ -1,0 +1,1 @@
+## Este repositório foi criado para armazenar algumas configurações de Vagrant para laboratórios de estudos.
