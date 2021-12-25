@@ -1,0 +1,27 @@
+---
+- hosts: database
+  tasks:
+  - name: 'Instala depencias + mysql-server'
+    become: yes
+    apt:
+      name:
+      -  python3-pymysql
+      -  mysql-server
+
+  - name: 'Altera o metodo de autenticacao do mysql para native_password'
+    become: yes
+    shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
+    
+  - name: 'Flush privileges'
+    become: yes
+    shell: mysql -u root -e 'FLUSH PRIVILEGES'
+
+  - name: 'Altera a senha do usuario root do mysql para TesteSenha001'
+    become: yes
+    mysql_user:
+      login_host: 'localhost'
+      login_user: 'root'
+      login_password:
+      name: 'root'
+      password: 'TesteSenha001'
+      state: present

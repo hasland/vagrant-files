@@ -1,0 +1,36 @@
+######## Criado por Gabriel Klug, baseado no código do Caio Delgado [https://github.com/caiodelgadonew/blog-vagrant-101] ########
+
+# Este Vagrant file é destinado a criar um laboratório de ansible com 2 máquinas virtuais: server04 (ubuntu 20.04), server05 (ubuntu 20.04).
+# As configurações das máquinas estão declaradas na lista "machines". 
+# Código feito para utilizar com o provider Virtualbox. 
+# Cada um dos servers possuirá uma rede privada para comunicação com prefixo de rede 172.16.15.XXX.
+# Elas serão agrupadas num grupo chamado "LabAnsible01" dentro do VirtualBox. 
+# O arquivo 'instala_ansible_ubuntu.sh' pode ser usado para instalar o ansible no servidor04 caso nao queira instalar na maquina host. Basta descomentar as linhas 31, 32, 33.
+# Para subir o lab, apenas execute um vagrant up.
+
+machines = {
+  "server04" => {"memory"=>"2048", "cpu"=>"2", "ip"=>"204", "image"=>"ubuntu/focal64"},
+  "server05" => {"memory"=>"2048", "cpu"=>"2", "ip"=>"205", "image"=>"ubuntu/focal64"},
+} 
+
+Vagrant.configure("2") do |config|
+  machines.each do |name, conf|
+    config.vm.define "#{name}" do |machine|
+      machine.vm.box = "#{conf["image"]}"
+      machine.vm.hostname = "#{name}"
+      # a linha abaixo foi adicionada pois algumas vezes as máquinas demoram a iniciar e o vagrant não finaliza o deploy. Caso aconteça ainda assim, aumentar um pouco mais o tempo.
+      # o padrão são 300 segundos.
+      machine.vm.boot_timeout=500
+      machine.vm.network "private_network", ip: "172.16.15.#{conf["ip"]}"
+      machine.vm.provider "virtualbox" do |vb|
+        vb.name = "#{name}"
+        vb.memory = conf["memory"]
+        vb.cpus = conf["cpu"]
+        vb.customize ["modifyvm", :id,"--groups", "/LabAnsible01"]
+      end
+      #if "#{name}" == "server04"
+      #  machine.vm.provision "shell", path: "instala_ansible_ubuntu.sh"
+      #end
+    end
+  end
+end

@@ -1,0 +1,39 @@
+---
+- name: 'Atualiza pacotes (somente se a ultima atualização foi feita há mais de 3600 seg [1 hora])'
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  become: yes
+- name: 'Instala dependencias + mysql-server'
+  become: yes
+  apt:
+    name:
+    -  python3-pymysql
+    -  mysql-server
+
+- name: 'Cria o banco do MySQL'
+  mysql_db:
+    name: "{{ wp_db_name }}"
+    state: present
+    login_user: root
+    login_password: 'TesteSenha001'
+  become: yes
+  
+- name: "Cria um usuario para administrar o banco {{ wp_db_name }}"
+  mysql_user:
+    login_user: root
+    login_password: 'TesteSenha001'
+    name: "{{ wp_username }}"
+    password: "{{ wp_user_password }}"
+    priv: "{{ wp_db_name }}.*:ALL"
+    state: present
+    host: "{{ item }}"
+  with_items:
+    - "{{ wp_host_ip }}"
+
+- name: 'Configura MySQL para aceitar conexoes remotas'
+  copy:
+    src: 'files/mysqld.cnf'
+    dest: '/etc/mysql/mysql.conf.d/mysqld.cnf'
+  become: yes
+  notify: restart mysql
